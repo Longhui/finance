@@ -1,0 +1,72 @@
+
+## 目的
+
+跟着大佬买基金：通过分析社保基金的持仓，找出与社保基金持仓相似度高的基金进行投资。
+
+## 数据来源
+
+东方财富网主力数据：http://data.eastmoney.com/zlsj/
+
+社保二季度持仓：
+http://data.eastmoney.com/zlsj/2021-06-30-3-2.html
+
+## 数据获取
+
+使用Python获取网页动态数据：
+https://www.cnblogs.com/ybf-yyj/p/7351493.html
+
+python 2.7 安装requests模块
+git clone git://github.com/psf/requests.git
+cd requests
+git checkout v2.2.1
+python -m pip install .
+
+
+## 代码
+```
+#-*- coding:utf-8 -*-
+import requests
+import json
+
+dic = dict()
+
+## 社保基金二季度持仓前50股票
+zlsj_url='http://data.eastmoney.com/dataapi/zlsj/list?date=2021-06-30&type=3&zjc=0&sortField=TOTAL_SHARES&sortDirec=1&pageNum=1&pageSize=50&p=1&pageNo=1'
+data=requests.get(zlsj_url)
+zlsj_content=json.loads(data.content)
+
+for stock in zlsj_content['data']:
+  code=stock['SECUCODE'].split('.')
+
+  ## 股票基金股东前50
+  holder_url='http://emweb.eastmoney.com/PC_HSF10/ShareholderResearch/PageJJCG?code={1}{0}&date=2021-06-30'.format(code[0], code[1])
+  data=requests.get(holder_url)
+  holders=json.loads(data.content)
+
+  ## 累计基金与社保基金相似度
+  for holder in holders['jjcg']:
+    item=holder['HOLDER_CODE']
+    if item in dic:
+      dic[item] += 1
+    else:
+      dic[item] = 1
+
+## 按相似度排序
+sorted_dict=sorted(dic.items(), key=lambda d:d[1], reverse=True)
+
+## 输出排名前十
+for i in range(10):
+  print sorted_dict[i]
+```
+
+## 统计结果
+(u'510300', 28)
+(u'510330', 26)
+(u'159919', 25)
+(u'510180', 14)
+(u'100032', 14)
+(u'510500', 14)
+(u'510310', 13)
+(u'515330', 11)
+(u'512500', 10)
+(u'159901', 10)
